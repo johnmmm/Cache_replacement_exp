@@ -69,7 +69,17 @@ void CACHE_REPLACEMENT_STATE::InitReplacementState()
     }
 
     // Contestants:  ADD INITIALIZATION FOR YOUR HARDWARE HERE
+    if (replPolicy != CRC_REPL_CONTESTANT) 
+        return;
 
+    for(UINT32 setIndex=0; setIndex<numsets; setIndex++) 
+    {
+        for(UINT32 way=0; way<assoc; way++) 
+        {
+            // initialize policy num (for my policy)
+            repl[ setIndex ][ way ].myPolicyNum = 0;
+        }
+    }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -102,6 +112,7 @@ INT32 CACHE_REPLACEMENT_STATE::GetVictimInSet( UINT32 tid, UINT32 setIndex, cons
     else if( replPolicy == CRC_REPL_CONTESTANT )
     {
         // Contestants:  ADD YOUR VICTIM SELECTION FUNCTION HERE
+        return Get_my_Victim( setIndex );
     }
 
     // We should never get here
@@ -138,6 +149,7 @@ void CACHE_REPLACEMENT_STATE::UpdateReplacementState(
         // Contestants:  ADD YOUR UPDATE REPLACEMENT STATE FUNCTION HERE
         // Feel free to use any of the input parameters to make
         // updates to your replacement policy
+        Updatemy(setIndex, updateWayID, cacheHit);
     }
     
     
@@ -190,6 +202,41 @@ INT32 CACHE_REPLACEMENT_STATE::Get_Random_Victim( UINT32 setIndex )
     return way;
 }
 
+INT32 CACHE_REPLACEMENT_STATE::Get_my_Victim( UINT32 setIndex )
+{
+    // Get pointer to replacement state of current set
+    LINE_REPLACEMENT_STATE *replSet = repl[ setIndex ];
+
+    std::vector<UINT32> less_ones;
+    UINT32 minone = 1000000;
+
+    // Search for victim whose stack position is assoc-1
+    for(UINT32 way=0; way<assoc; way++) 
+    {
+        if( replSet[way].myPolicyNum < minone ) 
+        {
+            minone = replSet[way].myPolicyNum;
+            less_ones.clear();
+        }
+        else if(replSet[way].myPolicyNum == minone)
+        {
+            less_ones.push_back(way);
+        }
+    }
+
+    UINT32 maxone = 0;
+    INT32 myway = 0;
+    for(UINT32 i = 0; i < less_ones.size(); i++)
+    {
+        if(replSet[less_ones.at(i)].LRUstackposition >= maxone)
+        {
+            maxone = replSet[less_ones.at(i)].LRUstackposition;
+            myway = less_ones.at(i);
+        }
+    }
+    return myway;
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 //                                                                            //
 // This function implements the LRU update routine for the traditional        //
@@ -214,6 +261,39 @@ void CACHE_REPLACEMENT_STATE::UpdateLRU( UINT32 setIndex, INT32 updateWayID )
 
     // Set the LRU stack position of new line to be zero
     repl[ setIndex ][ updateWayID ].LRUstackposition = 0;
+}
+
+void CACHE_REPLACEMENT_STATE::Updatemy( UINT32 setIndex, INT32 updateWayID, bool cacheHit)
+{
+    // Determine current LRU stack position
+    UINT32 currLRUstackposition = repl[ setIndex ][ updateWayID ].LRUstackposition;
+
+    // Update the stack position of all lines before the current line
+    // Update implies incremeting their stack positions by one
+    for(UINT32 way=0; way<assoc; way++) 
+    {
+        if( repl[setIndex][way].LRUstackposition < currLRUstackposition ) 
+        {
+            repl[setIndex][way].LRUstackposition++;
+        }
+    }
+
+    // Set the LRU stack position of new line to be zero
+    repl[ setIndex ][ updateWayID ].LRUstackposition = 0;
+    // Set the num to be zero
+    repl[ setIndex ][ updateWayID ].myPolicyNum = 0;
+
+    // make the number lesser so that it won't be too large
+    if(cacheHit)
+    {
+        if(rand() % 50 == 16 || rand() % 50 == 25)
+        {
+            for (UINT32 way = 0; way < assoc; way++) 
+            {
+				repl[setIndex][way].myPolicyNum = (UINT32)repl[setIndex][way].myPolicyNum * 0.75;		
+			}
+        }
+    }
 }
 
 ////////////////////////////////////////////////////////////////////////////////

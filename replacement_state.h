@@ -18,6 +18,7 @@
 
 #include <cstdlib>
 #include <cassert>
+#include <vector>
 #include "utils.h"
 #include "crc_cache_defs.h"
 
@@ -35,6 +36,7 @@ typedef struct
     UINT32  LRUstackposition;
 
     // CONTESTANTS: Add extra state per cache line here
+    UINT32 myPolicyNum;
 
 } LINE_REPLACEMENT_STATE;
 
@@ -76,7 +78,9 @@ class CACHE_REPLACEMENT_STATE
     INT32  Get_Random_Victim( UINT32 setIndex );
 
     INT32  Get_LRU_Victim( UINT32 setIndex );
+    INT32  Get_my_Victim( UINT32 setIndex );
     void   UpdateLRU( UINT32 setIndex, INT32 updateWayID );
+    void   Updatemy( UINT32 setIndex, INT32 updateWayID, bool cacheHit);
 };
 
 
