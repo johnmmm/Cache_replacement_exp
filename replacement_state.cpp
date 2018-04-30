@@ -205,6 +205,7 @@ INT32 CACHE_REPLACEMENT_STATE::Get_Random_Victim( UINT32 setIndex )
 INT32 CACHE_REPLACEMENT_STATE::Get_my_Victim( UINT32 setIndex )
 {
     // Get pointer to replacement state of current set
+    /*
     LINE_REPLACEMENT_STATE *replSet = repl[ setIndex ];
 
     std::vector<UINT32> less_ones;
@@ -234,6 +235,34 @@ INT32 CACHE_REPLACEMENT_STATE::Get_my_Victim( UINT32 setIndex )
             myway = less_ones.at(i);
         }
     }
+    return myway;
+    */
+
+   // Get pointer to replacement state of current set
+    LINE_REPLACEMENT_STATE *replSet = repl[ setIndex ];
+
+    INT32   myway   = 0;
+    std::vector<UINT32> lru_ones;
+
+    // Search for victim whose stack position is assoc-1
+    for(UINT32 way=0; way<assoc; way++) 
+    {
+        if( replSet[way].LRUstackposition >= (assoc-3) ) 
+        {
+            lru_ones.push_back(way);
+        }
+    }
+
+    UINT32 minone = 10000000;
+    for(UINT32 i = 0; i < lru_ones.size(); i++)
+    {
+        if(replSet[lru_ones.at(i)].myPolicyNum < minone)
+        {
+            minone = replSet[lru_ones.at(i)].myPolicyNum;
+            myway = lru_ones.at(i);
+        }
+    }
+
     return myway;
 }
 
@@ -280,19 +309,23 @@ void CACHE_REPLACEMENT_STATE::Updatemy( UINT32 setIndex, INT32 updateWayID, bool
 
     // Set the LRU stack position of new line to be zero
     repl[ setIndex ][ updateWayID ].LRUstackposition = 0;
-    // Set the num to be zero
-    repl[ setIndex ][ updateWayID ].myPolicyNum = 0;
 
     // make the number lesser so that it won't be too large
     if(cacheHit)
     {
-        if(rand() % 50 == 16 || rand() % 50 == 25)
+        repl[ setIndex ][ updateWayID ].myPolicyNum++;
+        if(rand() % 50 >= 16 || rand() % 50 <= 25)
         {
             for (UINT32 way = 0; way < assoc; way++) 
             {
 				repl[setIndex][way].myPolicyNum = (UINT32)repl[setIndex][way].myPolicyNum * 0.75;		
 			}
         }
+    }
+    else if(cacheHit)
+    {
+        // Set the num to be zero
+        repl[ setIndex ][ updateWayID ].myPolicyNum = 0;
     }
 }
 
