@@ -205,40 +205,6 @@ INT32 CACHE_REPLACEMENT_STATE::Get_Random_Victim( UINT32 setIndex )
 INT32 CACHE_REPLACEMENT_STATE::Get_my_Victim( UINT32 setIndex )
 {
     // Get pointer to replacement state of current set
-    /*
-    LINE_REPLACEMENT_STATE *replSet = repl[ setIndex ];
-
-    std::vector<UINT32> less_ones;
-    UINT32 minone = 1000000;
-
-    // Search for victim whose stack position is assoc-1
-    for(UINT32 way=0; way<assoc; way++) 
-    {
-        if( replSet[way].myPolicyNum < minone ) 
-        {
-            minone = replSet[way].myPolicyNum;
-            less_ones.clear();
-        }
-        else if(replSet[way].myPolicyNum == minone)
-        {
-            less_ones.push_back(way);
-        }
-    }
-
-    UINT32 maxone = 0;
-    INT32 myway = 0;
-    for(UINT32 i = 0; i < less_ones.size(); i++)
-    {
-        if(replSet[less_ones.at(i)].LRUstackposition >= maxone)
-        {
-            maxone = replSet[less_ones.at(i)].LRUstackposition;
-            myway = less_ones.at(i);
-        }
-    }
-    return myway;
-    */
-
-   // Get pointer to replacement state of current set
     LINE_REPLACEMENT_STATE *replSet = repl[ setIndex ];
 
     INT32   myway   = 0;
